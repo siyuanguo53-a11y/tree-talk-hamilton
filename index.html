@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Tree Talk Hamilton</title>
+  <style>
+    :root { color-scheme: light; font-family: Arial, sans-serif; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; background: #183b1d; display: grid; place-items: center; }
+    .app { position: relative; width: min(100vw, 430px); aspect-ratio: 2 / 3; overflow: hidden; background: #eaf5d9; box-shadow: 0 0 36px #0008; }
+    .screen { position: absolute; inset: 0; display: none; }
+    .screen.active { display: block; }
+    .screen img { width: 100%; height: 100%; object-fit: fill; display: block; }
+    .hotspot { position: absolute; border: 0; background: transparent; cursor: pointer; border-radius: 999px; }
+    .hotspot:focus-visible { outline: 4px solid #ffe45e; outline-offset: 2px; background: #fff3; }
+    .start { left: 18%; top: 76%; width: 64%; height: 10%; }
+    .acer { left: 18%; top: 39%; width: 64%; height: 8%; }
+    .bark { left: 18%; top: 82%; width: 64%; height: 8%; }
+    .help { left: 20%; top: 84%; width: 60%; height: 9%; }
+    .answer { left: 10%; width: 80%; height: 7%; }
+    .answer.one { top: 46%; } .answer.two { top: 55%; } .answer.three { top: 64%; }
+    .tomorrow { left: 14%; top: 90%; width: 72%; height: 7%; }
+    .nominate { left: 16%; top: 39%; width: 68%; height: 8%; }
+    .photo { left: 10%; top: 51%; width: 80%; height: 8%; }
+    .location { left: 10%; top: 61%; width: 80%; height: 8%; }
+    .checkin { left: 10%; top: 71%; width: 80%; height: 8%; }
+    .share { left: 10%; top: 81%; width: 80%; height: 8%; }
+    .scan { left: 35%; top: 76%; width: 58%; height: 14%; }
+    .screen img.qr-live { position: absolute; z-index: 2; left: 10.2%; top: 77.1%; width: 19.7%; height: auto; aspect-ratio: 1; object-fit: contain; background: white; padding: 2px; border-radius: 2px; }
+    .nav { position: fixed; z-index: 5; top: 12px; left: 50%; transform: translateX(-50%); width: min(calc(100vw - 24px), 406px); display: flex; justify-content: space-between; pointer-events: none; }
+    .nav button { pointer-events: auto; border: 0; border-radius: 18px; padding: 8px 12px; color: white; background: #173d22dd; font-weight: 700; box-shadow: 0 2px 8px #0005; }
+    .toast { position: absolute; z-index: 4; left: 8%; right: 8%; bottom: 5%; padding: 12px 16px; border-radius: 10px; background: #163f22ee; color: white; text-align: center; font-weight: 700; opacity: 0; transform: translateY(10px); transition: .2s; pointer-events: none; }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    @media (max-width: 430px) { .app { width: 100vw; min-height: 100svh; aspect-ratio: 2 / 3; } }
+  </style>
+</head>
+<body>
+  <main class="app" aria-label="Tree Talk clickable game prototype">
+    <section class="screen active" data-screen="0"><img src="assets/screen1.webp" alt="Tree Talk start screen"><button class="hotspot start" aria-label="Start the game" data-go="1"></button></section>
+    <section class="screen" data-screen="1"><img src="assets/screen2.webp" alt="Choose Acer or Bark Vader"><button class="hotspot acer" aria-label="Choose Acer" data-tree="Acer" data-go="2"></button><button class="hotspot bark" aria-label="Choose Bark Vader" data-tree="Bark Vader" data-go="2"></button></section>
+    <section class="screen" data-screen="2"><img src="assets/screen3.webp" alt="Acer daily tree status"><button class="hotspot help" aria-label="Help Acer" data-go="3"></button></section>
+    <section class="screen" data-screen="3"><img src="assets/screen4.webp" alt="Daily tree care challenge"><button class="hotspot answer one" aria-label="Choose slow virtual watering" data-correct="true"></button><button class="hotspot answer two" aria-label="Choose extra fertilizer" data-correct="false"></button><button class="hotspot answer three" aria-label="Choose to ignore the warning" data-correct="false"></button></section>
+    <section class="screen" data-screen="4"><img src="assets/screen5.webp" alt="Tree journey, badges and next mission"><button class="hotspot tomorrow" aria-label="Continue to community action" data-go="5"></button></section>
+    <section class="screen" data-screen="5"><img src="assets/screen6.webp" alt="Nominate Hamilton's next talking tree"><button class="hotspot nominate" aria-label="Nominate a tree" data-message="Nomination form opened in this prototype."></button><button class="hotspot photo" aria-label="Upload a photo" data-message="Photo upload selected."></button><button class="hotspot location" aria-label="Add a location" data-message="Location added."></button><button class="hotspot checkin" aria-label="Check in at a park" data-message="Park check-in recorded."></button><button class="hotspot share" aria-label="Share the project" data-go="6"></button></section>
+    <section class="screen" data-screen="6"><img src="assets/screen7.webp" alt="Tree Talk social media poster"><img class="qr-live" id="prototype-qr" alt="QR code linking to the Tree Talk game prototype"><button class="hotspot scan" aria-label="Restart the prototype" data-go="0"></button></section>
+    <div class="toast" role="status" aria-live="polite"></div>
+  </main>
+  <nav class="nav" aria-label="Prototype navigation"><button id="back">Back</button><button id="home">Home</button></nav>
+  <script>
+    const screens = [...document.querySelectorAll('.screen')];
+    const toast = document.querySelector('.toast');
+    const publicGameUrl = new URL('.', window.location.href).href;
+    document.getElementById('prototype-qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=${encodeURIComponent(publicGameUrl)}`;
+    let current = 0;
+    const show = (index) => {
+      current = Number(index);
+      screens.forEach((s, i) => s.classList.toggle('active', i === current));
+      toast.classList.remove('show');
+      window.scrollTo(0, 0);
+    };
+    const message = (text, next = null) => {
+      toast.textContent = text;
+      toast.classList.add('show');
+      clearTimeout(message.timer);
+      message.timer = setTimeout(() => { toast.classList.remove('show'); if (next !== null) show(next); }, 1100);
+    };
+    document.addEventListener('click', (event) => {
+      const button = event.target.closest('button');
+      if (!button) return;
+      if (button.dataset.tree) localStorage.setItem('treeTalkChoice', button.dataset.tree);
+      if (button.dataset.correct === 'true') return message('Correct! Slow virtual watering helps dry soil without waste.', 4);
+      if (button.dataset.correct === 'false') return message('Try again: respond to dry soil with careful watering.');
+      if (button.dataset.message) return message(button.dataset.message);
+      if (button.dataset.go !== undefined) show(button.dataset.go);
+    });
+    document.getElementById('back').addEventListener('click', () => show(Math.max(0, current - 1)));
+    document.getElementById('home').addEventListener('click', () => show(0));
+  </script>
+</body>
+</html>
